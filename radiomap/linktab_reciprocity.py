@@ -13,16 +13,19 @@ disagree. This compares that disagreement for the link tables of rm_linktab_cola
     peak_check.png     where each map's strongest cell is relative to its transmitter
     metrics.json       all numbers, incl. how much the asymmetry changes relay choices
 
-    python linktab_reciprocity.py --site fountain --out bs_reports/reciprocity
+    python radiomap/linktab_reciprocity.py --site fountain --out bs_reports/reciprocity
 """
 
 import argparse
 import json
 import math
 import os
+import sys
 
 import numpy as np
 
+# repo layout: shared modules live in sibling folders (on the cars all files sit in one folder)
+sys.path[:0] = [os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', d) for d in ('common',)]
 import relay_brain
 import site_map
 

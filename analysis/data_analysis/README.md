@@ -23,7 +23,7 @@ run_all.py                 the list of runs; regenerates everything above from r
 Regenerate everything (repo root, `..\.venv` Python):
 
 ```
-..\.venv\Scripts\python data_analysis\run_all.py
+..\.venv\Scripts\python analysis\data_analysis\run_all.py
 ```
 
 ## Runs

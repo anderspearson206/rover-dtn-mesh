@@ -5,8 +5,8 @@ the session logs and reports, and sends fleet control to the rovers. No GUI.
 bs_dashboard.py is the live display on top of this. The core can also run on its own, so
 logging and reports never depend on the display:
 
-    python bs_core.py --port COM5              # headless: log everything, Ctrl-C writes the summary
-    python bs_core.py --port COM5 --site fountain   # + terrain lookups (site_map.py)
+    python basestation/bs_core.py --port COM5              # headless: log everything, Ctrl-C writes the summary
+    python basestation/bs_core.py --port COM5 --site fountain   # + terrain lookups (site_map.py)
 
 Session folder (bs_reports/session_<time>[_<tag>]/):
     serial.log              every BS line with a wall-clock timestamp (+ #CONTACT/#MARKER/#CONTROL)
@@ -33,6 +33,7 @@ import os
 import random
 import struct
 import subprocess
+import sys
 import threading
 import time
 from collections import defaultdict, deque
@@ -41,6 +42,8 @@ from typing import Dict, List, Optional
 
 import serial
 
+# repo layout: shared modules live in sibling folders (on the cars all files sit in one folder)
+sys.path[:0] = [os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', d) for d in ('common', 'radiomap')]
 import rm_generate
 import route_plan
 import site_map
@@ -728,7 +731,7 @@ class BSCore:
             self._event('warn', f"radio maps: {self.rm_job['error']}")
             return
         bx, by = site.tx_xy
-        cmd = [py, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rm_generate.py'),
+        cmd = [py, os.path.abspath(rm_generate.__file__),
                '--site', site.name, '--terrain-dir', site.dir, '--bs', f"{bx},{by}", '--rm-env', self.rm_env]
         flags = 0x08000000 if os.name == 'nt' else 0          # CREATE_NO_WINDOW
         try:

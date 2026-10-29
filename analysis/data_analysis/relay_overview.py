@@ -1,14 +1,14 @@
 """
 relay_overview.py  --  Relay-run figure and summary for a two-rover session (explorer + relay).
 
-Writes into data_analysis/<name>/:
+Writes into analysis/data_analysis/<name>/:
     relay.png    map of both paths with the relay's targets; RSSI of both rovers at the BS; the
                  relay's measured links (BS / explorer); explorer bundles delivered direct vs via the
                  relay; and which BS control version each rover had adopted (control loss shows here)
     relay.md     the numbers behind it
 
 Usage (repo root, ..\\.venv Python):
-    python data_analysis/relay_overview.py data_analysis/raw/session_20261023_135640_double_ferry3 \
+    python analysis/data_analysis/relay_overview.py analysis/data_analysis/raw/session_20261023_135640_double_ferry3 \
         --name double_ferry3 --explorer 54272 --relay 57936
 
 Rover status comes from the @ROVER_STATUS lines in serial.log (rover_status_*.csv can have a stale

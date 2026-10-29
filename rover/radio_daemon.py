@@ -45,6 +45,7 @@ import argparse
 import json
 import math
 import os
+import sys
 import random
 import platform
 import signal
@@ -59,6 +60,8 @@ from collections import defaultdict, deque
 from datetime import datetime
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
+# repo layout: shared modules live in sibling folders (on the cars all files sit in one folder)
+sys.path[:0] = [os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', d) for d in ('common',)]
 from odom_fusion import OdomFusion   # --ros-wheel-topic: wheel distance + T265 heading (shared with rover_nav.py)
 
 try:
@@ -2537,7 +2540,7 @@ def main():
     rl.add_argument('--site', help='Site name (e.g. fountain): enables the relay role, switched on '
                                    'from the dashboard')
     rl.add_argument('--terrain-dir', help='Folder with <site>_meta.json, _drivable.npy, ... '
-                                          '(default: terrain/ or ../terrain/ next to this script)')
+                                          '(default: terrain/, ../terrain/ or ../../terrain/ from site_map.py)')
     rl.add_argument('--linktab', action='append', default=None, metavar='NPZ',
                     help='Link table <site>_linktab_<model>.npz (repeatable). Default: every '
                          '<site>_linktab_*.npz in the terrain folder; the dashboard picks one per relay '

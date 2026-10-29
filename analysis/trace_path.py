@@ -20,7 +20,7 @@ drove. Trace that route on the site map and the logged samples are slid along it
         fix_track_traced.png   raw vs traced track + RSSI checks   (fix_track.plot)
         fix_track_rm_traced.png  predicted radio maps on the route (fix_track.plot_rm)
 
-    python trace_path.py bs_reports/session_..._exp_161720 --site fountain
+    python analysis/trace_path.py bs_reports/session_..._exp_161720 --site fountain
 """
 
 import argparse
@@ -35,6 +35,8 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
+# repo layout: shared modules live in sibling folders (on the cars all files sit in one folder)
+sys.path[:0] = [os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', d) for d in ('common', 'radiomap', 'basestation')]
 import fix_track
 import site_map
 from bs_dashboard import shaded_relief, radio_rgba, rssi_color

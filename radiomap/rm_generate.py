@@ -10,7 +10,7 @@ on <site>_terrain.npy with the transmitter at the given map position, and writes
 next to the site's own maps (site_map.Site.set_bs picks them up). Existing files are reused
 unless --force. Needs the lunar-mesh-env Python (torch, diffusers), so run it with that venv:
 
-    ~/Documents/lunar-mesh-env/.venv/Scripts/python.exe rm_generate.py --site fountain --bs 10,-20
+    ~/Documents/lunar-mesh-env/.venv/Scripts/python.exe radiomap/rm_generate.py --site fountain --bs 10,-20
 
 bs_core starts it in the background when the BS is moved on the dashboard. Progress lines
 on stdout:  "READY <model> <path>"  per finished map, "ERROR <text>" on failure.
@@ -23,6 +23,8 @@ import time
 
 import numpy as np
 
+# repo layout: shared modules live in sibling folders (on the cars all files sit in one folder)
+sys.path[:0] = [os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', d) for d in ('common',)]
 import site_map
 
 DEFAULT_ENV = os.path.expanduser('~/Documents/lunar-mesh-env')

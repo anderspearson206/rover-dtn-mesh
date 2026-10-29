@@ -7,9 +7,9 @@ decides; when it sends a route, the simulated relay drives it at --speed. The pl
 explorer track, the relay's path and targets, and over time the predicted link from the explorer
 to the BS: direct, and through the relay (the weaker of its two links), using the same link model.
 
-    python relay_replay.py bs_reports/session_20261021_153126 --explorer 57936 --site fountain
-    python relay_replay.py <session> --explorer 57936 --site fountain --linktab ../terrain/fountain_linktab_nn.npz
-    python relay_replay.py <session> --explorer 57936 --site fountain --dropout 120:200   # test ferrying
+    python radiomap/relay_replay.py bs_reports/session_20261021_153126 --explorer 57936 --site fountain
+    python radiomap/relay_replay.py <session> --explorer 57936 --site fountain --linktab ../terrain/fountain_linktab_nn.npz
+    python radiomap/relay_replay.py <session> --explorer 57936 --site fountain --dropout 120:200   # test ferrying
 """
 
 import argparse
@@ -17,10 +17,13 @@ import csv
 import json
 import math
 import os
+import sys
 from datetime import datetime
 
 import numpy as np
 
+# repo layout: shared modules live in sibling folders (on the cars all files sit in one folder)
+sys.path[:0] = [os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', d) for d in ('common',)]
 import relay_brain
 import site_map
 

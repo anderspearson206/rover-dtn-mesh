@@ -1,10 +1,10 @@
 """
-run_all.py  --  Regenerate every figure and summary in data_analysis/ from the archived raw data.
+run_all.py  --  Regenerate every figure and summary in analysis/data_analysis/ from the archived raw data.
 
 RUNS is the list of real experiments. To add one: copy its session folder from bs_reports/ into
 raw/, copy any radio maps it used (<site>_rm58_*@<col>_<row>.npy) into terrain/, and add a line.
 
-    python data_analysis/run_all.py          (repo root, ..\\.venv Python)
+    python analysis/data_analysis/run_all.py          (repo root, ..\\.venv Python)
 """
 
 import os

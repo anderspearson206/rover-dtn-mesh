@@ -59,6 +59,7 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Joy
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(1, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'common'))  # repo layout
 from odom_fusion import OdomFusion, wrap_deg  # noqa: E402
 
 DENSIFY_M = 0.25        # route resampled to this spacing for progress tracking

@@ -1,7 +1,7 @@
 """
 analyze_session.py  --  Offline analysis of one BS dashboard session (bs_reports/session_*).
 
-For each session it writes into data_analysis/<name>/:
+For each session it writes into analysis/data_analysis/<name>/:
     map_rm.png         predicted radio maps (nn_pmnet, nn) with the driven path and planned routes
     map_comms.png      measured RSSI along the path, and where each data bundle was generated
                        coloured by its delivery latency
@@ -11,11 +11,11 @@ For each session it writes into data_analysis/<name>/:
     summary.md         the numbers behind the figures
 
 Usage (from the repo root, with the ..\\.venv Python):
-    python data_analysis/analyze_session.py bs_reports/session_20261015_094354_shadow1 --name shadow1
-    python data_analysis/analyze_session.py bs_reports/session_*_shadow2
-    python data_analysis/analyze_session.py bs_reports/session_20261015_091320 --name preshadow \
+    python analysis/data_analysis/analyze_session.py bs_reports/session_20261015_094354_shadow1 --name shadow1
+    python analysis/data_analysis/analyze_session.py bs_reports/session_*_shadow2
+    python analysis/data_analysis/analyze_session.py bs_reports/session_20261015_091320 --name preshadow \
         --window 09:14:20-09:35:41          (only part of a session)
-    python data_analysis/analyze_session.py data_analysis/raw/session_20261021_171010_double_rover1 \
+    python analysis/data_analysis/analyze_session.py analysis/data_analysis/raw/session_20261021_171010_double_rover1 \
         --name double_rover1 --node 57936,54272 --window 17:15:45-
             (several rovers: one folder per rover under <name>/, plus <name>/overview.png and
              <name>/summary.md comparing them)
@@ -57,7 +57,7 @@ from matplotlib.lines import Line2D
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TERRAIN_DIR = os.path.join(HERE, 'terrain')     # archived copy of the site + radio maps the runs used
-sys.path.insert(0, os.path.dirname(HERE))
+sys.path.insert(0, os.path.join(HERE, '..', '..', 'common'))
 import site_map as sm  # noqa: E402
 
 MODELS = ('nn_pmnet', 'nn', 'avg')      # avg = mean of the nn_pmnet and nn maps in dB

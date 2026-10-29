@@ -15,7 +15,7 @@ files, which this script puts in one zip:
 Upload the zip plus lunar-mesh-env's RadioLunaDiff/pretrained_models_network.zip (the
 weights, same for every site) to one Google Drive folder, MyDrive/rm_linktab by default.
 
-    python rm_colab_bundle.py --site fountain          -> rm_colab_fountain.zip
+    python radiomap/rm_colab_bundle.py --site fountain          -> rm_colab_fountain.zip
 """
 
 import argparse
@@ -23,6 +23,8 @@ import os
 import sys
 import zipfile
 
+# repo layout: shared modules live in sibling folders (on the cars all files sit in one folder)
+sys.path[:0] = [os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', d) for d in ('common',)]
 import site_map
 
 DEFAULT_ENV = os.path.expanduser('~/Documents/lunar-mesh-env')

@@ -2,7 +2,7 @@
 Live BS dashboard (PySide6 + pyqtgraph) on top of bs_core.BSCore.
 
     pip install pyserial pyqtgraph PySide6
-    python bs_dashboard.py --port COM5
+    python basestation/bs_dashboard.py --port COM5
 
 Left: fleet control (start / live-change / standby experiments on every rover), rover table,
 event log. Right: comms timeline (link-up lanes, data throughput, data latency, markers),
@@ -12,6 +12,7 @@ window never affects logging or control. Closing the window writes the session s
 
 import argparse
 import math
+import os
 import sys
 import time
 from datetime import datetime
@@ -20,6 +21,8 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
+# repo layout: shared modules live in sibling folders (on the cars all files sit in one folder)
+sys.path[:0] = [os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', d) for d in ('common', 'radiomap')]
 import bs_core
 import relay_brain
 import route_plan

@@ -2,11 +2,11 @@
 radio_map.py  --  Reproduce the radio coverage map from saved coverage_*.csv files.
 
 Usage:
-    python radio_map.py bs_reports/coverage_*.csv
-    python radio_map.py bs_reports/coverage_20260617_150217.csv --track
-    python radio_map.py bs_reports/          (loads every coverage_*.csv in dir)
-    python radio_map.py bs_reports/*.csv --out radio_map.png --title "Run 1"
-    python radio_map.py bs_reports/*.csv --interp
+    python radiomap/radio_map.py bs_reports/coverage_*.csv
+    python radiomap/radio_map.py bs_reports/coverage_20260617_150217.csv --track
+    python radiomap/radio_map.py bs_reports/          (loads every coverage_*.csv in dir)
+    python radiomap/radio_map.py bs_reports/*.csv --out radio_map.png --title "Run 1"
+    python radiomap/radio_map.py bs_reports/*.csv --interp
 
 Options:
     --out FILE      Save figure to FILE instead of (or in addition to) showing it.

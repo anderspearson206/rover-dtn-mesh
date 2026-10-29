@@ -3,7 +3,7 @@ Dead reckoning from two odometry sources: distance from the wheels, heading from
 
 Shared by radio_daemon.py (python3, --ros-wheel-topic) and rover_nav.py (the ROS node on the
 car, python2 under ROS Melodic), so keep it python2-compatible: no f-strings, no annotations.
-Copy it next to whichever of those runs on the car.
+On the car it sits next to both (rover/deploy.sh copies it).
 """
 
 import math

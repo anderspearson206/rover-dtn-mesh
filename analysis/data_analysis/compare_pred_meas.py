@@ -3,16 +3,16 @@ compare_pred_meas.py  --  Predicted vs measured RSSI, side by side on the map, a
 offset to apply to the predictions.
 
 Writes:
-    data_analysis/<name>/side_by_side.png   measured | nn_pmnet | nn | avg along the path on one
+    analysis/data_analysis/<name>/side_by_side.png   measured | nn_pmnet | nn | avg along the path on one
                                             RSSI scale (offset applied), and the residual maps
-    data_analysis/offset/offset_analysis.png  offset estimates, RMSE vs offset, residual vs RSSI
-    data_analysis/offset/offset.md / .json    the numbers
+    analysis/data_analysis/offset/offset_analysis.png  offset estimates, RMSE vs offset, residual vs RSSI
+    analysis/data_analysis/offset/offset.md / .json    the numbers
 
 Usage (repo root, ..\\.venv Python). A run is folder:name, optionally @HH:MM:SS-HH:MM:SS to use
 only part of a session and #<node> to pick one rover of a multi-rover session (it is then named
 <name>/<node>). --pool names the runs whose cells form the pooled offset; runs left out
 (e.g. a different BS setup) get their own offset in their side-by-side figure:
-    python data_analysis/compare_pred_meas.py bs_reports/session_20261015_094354_shadow1:shadow1 \\
+    python analysis/data_analysis/compare_pred_meas.py bs_reports/session_20261015_094354_shadow1:shadow1 \\
         bs_reports/session_20261015_095910_shadow2:shadow2 \\
         bs_reports/session_20261015_091320:preshadow@09:14:20-09:35:41 --pool shadow1,shadow2
 
@@ -236,7 +236,7 @@ def main():
         path, name = spec.rsplit(':', 1) if ':' in spec[2:] else (spec, os.path.basename(spec))
         P = A.prepare(path, name, a.site, window or None, node or None)
         if node:
-            name = f'{name}/{node}'          # one rover of a multi-rover run: data_analysis/<name>/<node>/
+            name = f'{name}/{node}'          # one rover of a multi-rover run: analysis/data_analysis/<name>/<node>/
         preps[name] = P
         runs.append((name, {m: cell_residuals(P, m) for m in A.MODELS if m in P['pred_net']}))
 

@@ -5,8 +5,8 @@ Writes <terrain>/<site>_sat.png covering exactly the site's square (from <site>_
 UTM), which site_map.Site picks up as sat_path. Source: USGS NAIP orthoimagery
 (imagery.nationalmap.gov, public domain, ~0.6 m/pixel, US only).
 
-    python fetch_sat.py fountain range
-    python fetch_sat.py fountain --px 2048 --force
+    python basestation/fetch_sat.py fountain range
+    python basestation/fetch_sat.py fountain --px 2048 --force
 """
 
 import argparse
@@ -17,6 +17,8 @@ import sys
 import urllib.parse
 import urllib.request
 
+# repo layout: shared modules live in sibling folders (on the cars all files sit in one folder)
+sys.path[:0] = [os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', d) for d in ('common',)]
 from site_map import find_terrain_dir
 
 URL = 'https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer/exportImage'

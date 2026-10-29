@@ -7,7 +7,7 @@ path is then simplified (Douglas-Peucker) so it fits in a control message: the r
 straight segments between the points, so the tolerance is how far the simplified route may
 leave the A* path.
 
-    python route_plan.py --site fountain 34,12 -30,0 34,12      # plan and plot through points
+    python common/route_plan.py --site fountain 34,12 -30,0 34,12      # plan and plot through points
 """
 
 import heapq

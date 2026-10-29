@@ -39,9 +39,9 @@ Writes next to the input:  coverage_fixed.csv  (same columns with map_* / terrai
 predictions recomputed, plus raw_map_x/y, leg, leg_turn_deg, leg_scale)  and  fix_track.png.
 
 Usage:
-    python fix_track.py bs_reports/session_..._exp_140251 --site fountain
-    python fix_track.py <session> --site fountain --model pf
-    python fix_track.py <session> --site fountain --leg-heading 2:90 --leg-heading 3:-45
+    python analysis/fix_track.py bs_reports/session_..._exp_140251 --site fountain
+    python analysis/fix_track.py <session> --site fountain --model pf
+    python analysis/fix_track.py <session> --site fountain --leg-heading 2:90 --leg-heading 3:-45
 """
 
 import argparse
@@ -54,6 +54,8 @@ from datetime import datetime
 
 import numpy as np
 
+# repo layout: shared modules live in sibling folders (on the cars all files sit in one folder)
+sys.path[:0] = [os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', d) for d in ('common', 'radiomap')]
 import site_map
 
 STOP_STEP_M = 0.05        # odometry step below this between samples = not moving
@@ -342,7 +344,7 @@ def place_bs(site, x, y):
             print(f"no maps for the BS at ({x:+.1f}, {y:+.1f}) and no lunar-mesh-env venv; predictions blank")
         else:
             print(f"generating radio maps for the BS at ({site.tx_xy[0]:+.1f}, {site.tx_xy[1]:+.1f}) (~30 s)...")
-            subprocess.run([py, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rm_generate.py'),
+            subprocess.run([py, os.path.abspath(rm_generate.__file__),
                             '--site', site.name, '--terrain-dir', site.dir, '--bs', f"{x},{y}"],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             missing = site.reload_bs_maps()

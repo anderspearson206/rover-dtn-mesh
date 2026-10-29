@@ -35,7 +35,8 @@ GENERATED_MODELS = ('nn_pmnet', 'nn')     # radio maps rm_generate.py can make f
 def find_terrain_dir(explicit: Optional[str] = None) -> Optional[str]:
     here = os.path.dirname(os.path.abspath(__file__))
     for d in ([explicit] if explicit else []) + [os.path.join(here, 'terrain'),
-                                                 os.path.join(here, '..', 'terrain')]:
+                                                 os.path.join(here, '..', 'terrain'),
+                                                 os.path.join(here, '..', '..', 'terrain')]:
         if d and os.path.isdir(d):
             return os.path.normpath(d)
     return None

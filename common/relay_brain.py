@@ -32,7 +32,7 @@ Behaviour (RelayBrain.step), every RELAY_TICK_S:
     Explorer silent for stale_s: keep the current target. Silent for stale_s + ferry_s:
     drive to its last known position (ferry), until it is heard again.
 
-    python relay_brain.py --site fountain --bs 44.5,-62.5 --explorer=-20,30   # one decision
+    python common/relay_brain.py --site fountain --bs 44.5,-62.5 --explorer=-20,30   # one decision
 """
 
 import glob
