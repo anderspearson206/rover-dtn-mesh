@@ -24,6 +24,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 # repo layout: shared modules live in sibling folders (on the cars all files sit in one folder)
 sys.path[:0] = [os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', d) for d in ('common', 'radiomap')]
 import bs_core
+import plan_runner
 import relay_brain
 import route_plan
 import site_map
@@ -543,6 +544,7 @@ class Dashboard(QtWidgets.QMainWindow):
         al.addWidget(self.align_label)
         sl.addWidget(ab)
         sl.addWidget(self._build_route_box())
+        sl.addWidget(self._build_plan_box())
         sl.addWidget(self._build_relay_box())
         sl.addWidget(self.hover_label)
         sl.addStretch(1)
@@ -637,6 +639,205 @@ class Dashboard(QtWidgets.QMainWindow):
         rl.addWidget(self.route_label)
         rb.setEnabled(self.site is not None and self.site.drivable is not None)
         return rb
+
+    # experiment plans (analysis/waypoint_selection/plans/*.json, run by plan_runner.PlanRunner)
+    PLAN_ROLE_COLORS = ('#0d47a1', '#e65100', '#2e7d32', '#6a1b9a')
+
+    def _build_plan_box(self) -> QtWidgets.QGroupBox:
+        b = QtWidgets.QGroupBox("Experiment plan")
+        self.plan_runner = plan_runner.PlanRunner(self.core)
+        self.plan = None
+        lay = QtWidgets.QVBoxLayout(b)
+        row = QtWidgets.QHBoxLayout()
+        self.plan_box = QtWidgets.QComboBox()
+        self.plan_box.setToolTip(f"Plans in {plan_runner.PLAN_DIR} (written by the waypoint_selection scripts)")
+        self.plan_box.currentIndexChanged.connect(self._on_plan_selected)
+        row.addWidget(self.plan_box, 1)
+        reload_ = QtWidgets.QPushButton("Reload")
+        reload_.clicked.connect(self._plan_reload)
+        row.addWidget(reload_)
+        lay.addLayout(row)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(QtWidgets.QLabel("Variant"))
+        self.plan_variant = QtWidgets.QComboBox()
+        self.plan_variant.currentIndexChanged.connect(lambda _i: self._draw_plan_preview())
+        row.addWidget(self.plan_variant, 1)
+        lay.addLayout(row)
+        self.plan_roles_lay = QtWidgets.QFormLayout()
+        lay.addLayout(self.plan_roles_lay)
+        self.plan_role_boxes = {}
+        self.plan_show = QtWidgets.QCheckBox("Show the plan's routes on the map")
+        self.plan_show.setChecked(True)
+        self.plan_show.toggled.connect(lambda _on: self._draw_plan_preview())
+        lay.addWidget(self.plan_show)
+        row = QtWidgets.QHBoxLayout()
+        for text, fn, tip in (
+                ("Drive to start", self.on_plan_stage, "Send every assigned rover to the plan's start point"),
+                ("Run", self.on_plan_run, "Start the selected variant: all rovers start their steps now"),
+                ("Abort", self.on_plan_abort, "Stop the plan and the routes of its rovers")):
+            btn = QtWidgets.QPushButton(text)
+            btn.setToolTip(tip)
+            btn.clicked.connect(fn)
+            if text == 'Run':
+                btn.setStyleSheet("font-weight: bold;")
+            row.addWidget(btn)
+        lay.addLayout(row)
+        self.plan_label = QtWidgets.QLabel()
+        self.plan_label.setWordWrap(True)
+        self.plan_label.setTextFormat(QtCore.Qt.RichText)
+        lay.addWidget(self.plan_label)
+        self.plan_lines = []                  # preview items on the map
+        b.setEnabled(self.site is not None and self.site.drivable is not None)
+        self._plan_reload()
+        return b
+
+    def _plan_reload(self) -> None:
+        cur = self.plan_box.currentText()
+        self._plan_files = dict(plan_runner.list_plans())
+        self.plan_box.blockSignals(True)
+        self.plan_box.clear()
+        self.plan_box.addItems(list(self._plan_files))
+        if cur in self._plan_files:
+            self.plan_box.setCurrentText(cur)
+        self.plan_box.blockSignals(False)
+        self._on_plan_selected()
+
+    def _on_plan_selected(self, *_):
+        name = self.plan_box.currentText()
+        self.plan = None
+        if name in getattr(self, '_plan_files', {}):
+            try:
+                self.plan = plan_runner.load_plan(self._plan_files[name])
+            except (OSError, ValueError) as e:
+                self.statusBar().showMessage(f"plan {name}: {e}", 8000)
+        self.plan_variant.blockSignals(True)
+        self.plan_variant.clear()
+        for key, v in (self.plan or {}).get('variants', {}).items():
+            self.plan_variant.addItem(f"{key}: {v.get('label', '')}", key)
+        self.plan_variant.blockSignals(False)
+        # one rover selector per role
+        keep = {r: box.currentText() for r, box in self.plan_role_boxes.items()}
+        while self.plan_roles_lay.rowCount():
+            self.plan_roles_lay.removeRow(0)
+        self.plan_role_boxes = {}
+        for role, what in (self.plan or {}).get('roles', {}).items():
+            box = QtWidgets.QComboBox()
+            self.plan_role_boxes[role] = box
+            self.plan_roles_lay.addRow(f"{role} ({what})", box)
+            if keep.get(role):
+                box.addItem(keep[role])
+        self._draw_plan_preview()
+
+    def _plan_assign(self) -> dict:
+        return {r: box.currentText() for r, box in self.plan_role_boxes.items() if box.currentText()}
+
+    def _draw_plan_preview(self) -> None:
+        for it in self.plan_lines:
+            self.p_map.removeItem(it)
+        self.plan_lines = []
+        key = self.plan_variant.currentData()
+        if not self.plan or key is None or not self.plan_show.isChecked():
+            return
+        v = self.plan['variants'][key]
+        for k, (role, steps) in enumerate(v['steps'].items()):
+            col = self.PLAN_ROLE_COLORS[k % len(self.PLAN_ROLE_COLORS)]
+            stops, last = [], None             # where the rover waits after driving (relay stop, waypoint)
+            for s in steps:
+                if 'drive' in s:
+                    pts = np.asarray(s['drive'], float)
+                    it = self.p_map.plot(pts[:, 0], pts[:, 1], pen=pg.mkPen(col, width=3, style=QtCore.Qt.DashLine))
+                    it.setZValue(8)
+                    self.plan_lines.append(it)
+                    last = pts[-1]
+                elif s.get('wait') and last is not None:
+                    stops.append(last)
+            if stops:
+                it = pg.ScatterPlotItem([p[0] for p in stops], [p[1] for p in stops], size=15, symbol='s',
+                                        brush=pg.mkBrush(col), pen=pg.mkPen('w', width=1.5))
+                it.setZValue(9)
+                self.p_map.addItem(it)
+                self.plan_lines.append(it)
+        st = self.plan['start_xy']
+        it = pg.ScatterPlotItem([st[0]], [st[1]], size=20, symbol='t1', brush=pg.mkBrush('#2e7d32'),
+                                pen=pg.mkPen('k', width=1.5))
+        it.setZValue(9)
+        self.p_map.addItem(it)
+        self.plan_lines.append(it)
+
+    def _refresh_plan(self, names) -> None:
+        for box in self.plan_role_boxes.values():
+            self._set_items(box, list(names))
+        self.plan_runner.tick()
+        lines = self.plan_runner.status_lines() if self.plan_runner.phase != 'idle' else []
+        if self.plan is not None and self.plan_runner.phase in ('idle', 'done', 'aborted'):
+            key = self.plan_variant.currentData()
+            pred = (self.plan['variants'].get(key) or {}).get('predicted', {})
+            if pred:
+                lines.append("predicted: " + "; ".join(f"{k} {v}" for k, v in pred.items()))
+            for role, node in self._plan_assign().items():
+                d = plan_runner.PlanRunner.at_start(self.core, self.plan, node)
+                where = ("no map position" if d is None else
+                         f"<span style='color:{'#2e7d32' if d <= plan_runner.AT_START_M else '#ef6c00'}'>"
+                         f"{d:.1f} m from the start</span>")
+                lines.append(f"{role} = {node}: {where}")
+        self.plan_label.setText("<br>".join(lines))
+
+    def _plan_check(self, need_variant=True):
+        if self.plan is None:
+            QtWidgets.QMessageBox.information(self, "Plan", "No plan selected (see the plans folder, Reload).")
+            return None
+        assign = self._plan_assign()
+        roles = list(self.plan.get('roles', {}))
+        if len(assign) < len(roles) or len(set(assign.values())) < len(roles):
+            QtWidgets.QMessageBox.information(self, "Plan", "Choose a different rover for each role.")
+            return None
+        if self.plan_runner.phase in ('staging', 'running'):
+            QtWidgets.QMessageBox.information(self, "Plan", "A plan is running: Abort it first.")
+            return None
+        return assign
+
+    def on_plan_stage(self) -> None:
+        assign = self._plan_check()
+        if assign is None:
+            return
+        st = self.plan['start_xy']
+        notes = "\n".join(f"{n}: {self._drive_note(n)}" for n in sorted(set(assign.values())))
+        if QtWidgets.QMessageBox.question(
+                self, "Drive to start", f"Send {', '.join(assign.values())} to the plan's start "
+                f"({st[0]:+.1f}, {st[1]:+.1f})?\n\n{notes}") != QtWidgets.QMessageBox.Yes:
+            return
+        self.plan_runner.stage(self.plan, assign, self.route_speed.value())
+
+    def on_plan_run(self) -> None:
+        assign = self._plan_check()
+        if assign is None:
+            return
+        key = self.plan_variant.currentData()
+        far = []
+        for role, node in assign.items():
+            d = plan_runner.PlanRunner.at_start(self.core, self.plan, node)
+            if d is None:
+                QtWidgets.QMessageBox.information(self, "Plan", f"{node} has no map position: place it first.")
+                return
+            if d > plan_runner.AT_START_M:
+                far.append(f"{node} is {d:.1f} m from the start")
+        v = self.plan['variants'][key]
+        steps = "\n".join(f"{role} ({assign[role]}): " + ", ".join(plan_runner.step_text(s) for s in ss)
+                          for role, ss in v['steps'].items())
+        notes = "\n".join(f"{n}: {self._drive_note(n)}" for n in sorted(set(assign.values())))
+        warn = ("\n\nNOT AT THE START: " + "; ".join(far) + " (it drives there first, so the timing will differ)"
+                if far else "")
+        if QtWidgets.QMessageBox.question(
+                self, "Run plan", f"Run {self.plan['name']}, variant {key}?\n\n{steps}{warn}\n\n{notes}") \
+                != QtWidgets.QMessageBox.Yes:
+            return
+        try:
+            self.plan_runner.start(self.plan, key, assign, self.route_speed.value())
+        except ValueError as e:
+            QtWidgets.QMessageBox.warning(self, "Plan", str(e))
+
+    def on_plan_abort(self) -> None:
+        self.plan_runner.abort()
 
     def _build_relay_box(self) -> QtWidgets.QGroupBox:
         b = QtWidgets.QGroupBox("Relay")
@@ -1093,6 +1294,7 @@ class Dashboard(QtWidgets.QMainWindow):
             self.map_vb.translateBy(x=xs[i] - r.center().x(), y=ys[i] - r.center().y())
         self._refresh_align_label(snap, locs, now)
         self._refresh_routes(snap)
+        self._refresh_plan(names)
         self._refresh_relay(snap, names)
         self._refresh_pose_mode(snap)
         self._refresh_rb(snap)

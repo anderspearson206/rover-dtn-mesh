@@ -6,6 +6,7 @@ Runs on the BS laptop, connected to the BS ESP32's serial port.
 |---|---|
 | `bs_core.py` | Serial reading, parsing, logging, contact tracking, reports and fleet-control sending, without a GUI. Run on its own for headless logging |
 | `bs_dashboard.py` | PySide6 + pyqtgraph GUI on top of `bs_core`; it only reads snapshots, so a slow or closed window never affects logging or control |
+| `plan_runner.py` | Runs a prepared experiment plan (`analysis/waypoint_selection/plans/*.json`) step by step through `bs_core`'s route sending; used by the dashboard's "Experiment plan" box |
 | `fetch_sat.py` | Downloads a north-up aerial photo (USGS NAIP, ~0.6 m/px) for a site's map background |
 
 Uses `common/` (site maps, route planning, relay brain) and `radiomap/rm_generate.py` (BS moves). Python environment: `..\.venv` one level above the repo (PySide6, pyqtgraph, pyserial, numpy).
@@ -41,6 +42,7 @@ With `--site <name>` the Map tab loads the site from the terrain folder (`--terr
 ## Route driving and the relay role
 
 - **Drive route**: select the rover, press "Add waypoints…" and click points in driving order. `route_plan.Planner` runs A* over the drivable mask from the rover's current pose. "Send route" converts the route to the rover's odometry frame and sends it, and `rover/rover_nav.py` follows it. RB must be held unless "Drive without RB" is ticked. In that case the radio deadman (default 8 s) stops a rover that has lost its controller once it no longer hears the BS. Every route and stop is logged to `routes.csv`.
+- **Experiment plan**: runs a prepared plan from `analysis/waypoint_selection/plans/` (written by `example.py` and `multi_agent_detour.py`; "Reload" picks up new files). A plan has variants, e.g. `naive` and `radio_map`, and roles (`rover1`, `rover2`); choose the variant and a rover for each role. "Show the plan's routes" draws them (dashed, one colour per role; squares = where a rover waits, triangle = start). "Drive to start" sends every assigned rover to the start point; "Run" starts all roles at once: each step is either a drive (A* from the rover to the step's first point, then the plan's own points, sent like "Send route"; done when the rover reports `done`) or a wait (start delay, relay stop, time at a waypoint). A rover that reports `stopped_off_route` / `stopped_bs` pauses its part of the plan. "Abort" stops the plan and its rovers' routes. Start, every step and the end are logged as markers (`#MARKER:plan-...` in `serial.log`, `markers.csv`), so a run can be cut into its steps afterwards. The RB / "Drive without RB" rules are the same as for a hand-sent route.
 - **Relay**: pick a relay and an explorer rover and press Start relay. The relay rover keeps driving to the spot that maximises its weaker link (BS ↔ relay, relay ↔ explorer). Settings: speed, "ferry after", comfort, gain, look-ahead, link model, and "Measured RSSI". The targets are drawn as diamonds, and "why:" shows the reason for the last decision. See `common/relay_brain.py`.
 
 ## Moving the BS
